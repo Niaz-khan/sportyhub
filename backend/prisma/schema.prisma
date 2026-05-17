@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  reviews   Review[]
+  topics    Topic[]
+  replies   Reply[]
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  category    String
+  price       Float
+  description String
+  image       String
+  rating      Float    @default(0)
+  stock       Int      @default(0)
+  reviews     Review[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String
+  userName  String
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Topic {
+  id         String   @id @default(uuid())
+  title      String
+  category   String
+  content    String
+  authorId   String?
+  authorName String
+  views      Int      @default(0)
+  replies    Int      @default(0)
+  createdAt  DateTime @default(now())
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  replyItems Reply[]
+}
+
+model Reply {
+  id         String   @id @default(uuid())
+  topicId    String
+  content    String
+  authorId   String?
+  authorName String
+  createdAt  DateTime @default(now())
+  topic      Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+}
+
+model ExpertTip {
+  id          String   @id @default(uuid())
+  title       String
+  category    String
+  content     String
+  expertName  String
+  expertTitle String
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Blog {
+  id         String   @id @default(uuid())
+  title      String
+  category   String
+  content    String
+  summary    String
+  image      String
+  authorName String
+  views      Int      @default(0)
+  likes      Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  userId          String?
+  userName        String
+  userEmail       String
+  items           Json
+  totalAmount     Float
+  status          String   @default("completed")
+  paymentIntentId String?
+  createdAt       DateTime @default(now())
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
