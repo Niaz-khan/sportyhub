@@ -15,10 +15,21 @@ import BlogDetails from './pages/BlogDetails';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Chatbot from './components/Chatbot';
+import PremiumAccess from './pages/PremiumAccess';
+import { featureFlags, premiumFeatureContent } from './config/features';
 
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem('token');
     return token ? children : <Navigate to="/login" replace />;
+}
+
+function FeatureRoute({ featureKey, children }) {
+    if (featureFlags[featureKey]) {
+        return children;
+    }
+
+    const content = premiumFeatureContent[featureKey] || {};
+    return <PremiumAccess title={content.title} description={content.description} />;
 }
 
 function App() {
@@ -32,16 +43,16 @@ function App() {
                     <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
                     <Route path="/product/:id" element={<ProtectedRoute><ProductDetails /></ProtectedRoute>} />
                     <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-                    <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-                    <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-                    <Route path="/forum" element={<ProtectedRoute><Forum /></ProtectedRoute>} />
-                    <Route path="/forum/topic/:id" element={<ProtectedRoute><TopicDetails /></ProtectedRoute>} />
-                    <Route path="/expert" element={<ProtectedRoute><ExpertAdvice /></ProtectedRoute>} />
-                    <Route path="/blog" element={<ProtectedRoute><Blog /></ProtectedRoute>} />
-                    <Route path="/blog/:id" element={<ProtectedRoute><BlogDetails /></ProtectedRoute>} />
+                    <Route path="/checkout" element={<ProtectedRoute><FeatureRoute featureKey="checkout"><Checkout /></FeatureRoute></ProtectedRoute>} />
+                    <Route path="/orders" element={<ProtectedRoute><FeatureRoute featureKey="orders"><Orders /></FeatureRoute></ProtectedRoute>} />
+                    <Route path="/forum" element={<ProtectedRoute><FeatureRoute featureKey="forum"><Forum /></FeatureRoute></ProtectedRoute>} />
+                    <Route path="/forum/topic/:id" element={<ProtectedRoute><FeatureRoute featureKey="forum"><TopicDetails /></FeatureRoute></ProtectedRoute>} />
+                    <Route path="/expert" element={<ProtectedRoute><FeatureRoute featureKey="expertAdvice"><ExpertAdvice /></FeatureRoute></ProtectedRoute>} />
+                    <Route path="/blog" element={<ProtectedRoute><FeatureRoute featureKey="blog"><Blog /></FeatureRoute></ProtectedRoute>} />
+                    <Route path="/blog/:id" element={<ProtectedRoute><FeatureRoute featureKey="blog"><BlogDetails /></FeatureRoute></ProtectedRoute>} />
                     <Route path="/" element={<Navigate to="/login" />} />
                 </Routes>
-                <Chatbot />
+                {featureFlags.chatbot && <Chatbot />}
             </BrowserRouter>
         </CartProvider>
     );

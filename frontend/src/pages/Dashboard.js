@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { featureFlags } from '../config/features';
 
 const Dashboard = () => {
     const [user, setUser] = useState(null);
@@ -13,20 +14,19 @@ const Dashboard = () => {
 
     const fetchDashboardStats = useCallback(async () => {
         if (!user?.id) return;
-        
+
         try {
-            const productsRes = await fetch('http://localhost:5000/api/products');
-            const products = await productsRes.json();
-            
-            const ordersRes = await fetch(`http://localhost:5000/api/orders/${user.id}`);
-            const orders = await ordersRes.json();
-            
-            const forumRes = await fetch('http://localhost:5000/api/forum/topics');
-            const topics = await forumRes.json();
-            
-            const blogRes = await fetch('http://localhost:5000/api/blogs');
-            const blogs = await blogRes.json();
-            
+            const products = await fetch('http://localhost:5000/api/products').then(res => res.json());
+            const orders = featureFlags.orders
+                ? await fetch(`http://localhost:5000/api/orders/${user.id}`).then(res => res.json())
+                : [];
+            const topics = featureFlags.forum
+                ? await fetch('http://localhost:5000/api/forum/topics').then(res => res.json())
+                : [];
+            const blogs = featureFlags.blog
+                ? await fetch('http://localhost:5000/api/blogs').then(res => res.json())
+                : [];
+
             setStats({
                 products: products.length,
                 orders: orders.length,
@@ -41,7 +41,7 @@ const Dashboard = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         const userData = localStorage.getItem('user');
-        
+
         if (!token) {
             navigate('/login');
         } else {
@@ -76,24 +76,23 @@ const Dashboard = () => {
     }
 
     const menuItems = [
-        { icon: '🏸', name: 'Products', path: '/products', color: '#667eea', description: 'Browse & shop sports equipment' },
-        { icon: '🛒', name: 'Cart', path: '/cart', color: '#28a745', description: 'View your shopping cart' },
-        { icon: '🎯', name: 'Expert Tips', path: '/expert', color: '#ff9800', description: 'Advice from professionals' },
-        { icon: '💬', name: 'Forum', path: '/forum', color: '#17a2b8', description: 'Community discussions' },
-        { icon: '📝', name: 'Blog', path: '/blog', color: '#6c5ce7', description: 'Latest sports articles' },
-        { icon: '📦', name: 'Orders', path: '/orders', color: '#fd7e14', description: 'Order history' },
-        { icon: '🤖', name: 'AI Assistant', path: '#', color: '#e83e8c', description: 'Chat with SportyBot' }
+        { icon: 'Products', name: 'Products', path: '/products', description: 'Browse and shop sports equipment' },
+        { icon: 'Cart', name: 'Cart', path: '/cart', description: 'View your shopping cart' },
+        { icon: 'Pro', name: 'Expert Tips', path: '/expert', description: featureFlags.expertAdvice ? 'Advice from professionals' : 'Premium members only', locked: !featureFlags.expertAdvice },
+        { icon: 'Forum', name: 'Forum', path: '/forum', description: featureFlags.forum ? 'Community discussions' : 'Premium members only', locked: !featureFlags.forum },
+        { icon: 'Blog', name: 'Blog', path: '/blog', description: featureFlags.blog ? 'Latest sports articles' : 'Premium members only', locked: !featureFlags.blog },
+        { icon: 'Orders', name: 'Orders', path: '/orders', description: featureFlags.orders ? 'Order history' : 'Premium members only', locked: !featureFlags.orders },
+        { icon: 'AI', name: 'AI Assistant', path: '#', description: featureFlags.chatbot ? 'Chat with SportyBot' : 'Premium members only', locked: !featureFlags.chatbot }
     ];
 
     return (
         <div style={styles.container}>
-            {/* Sidebar */}
             <div style={styles.sidebar}>
                 <div style={styles.logoContainer}>
-                    <span style={styles.logoIcon}>🏃‍♂️</span>
+                    <span style={styles.logoIcon}>SH</span>
                     <span style={styles.logoText}>Sporty<span style={{ color: '#ff9800' }}>Hub</span></span>
                 </div>
-                
+
                 <div style={styles.userInfo}>
                     <div style={styles.userAvatar}>
                         {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
@@ -107,7 +106,7 @@ const Dashboard = () => {
 
                 <nav style={styles.navMenu}>
                     {menuItems.map((item, index) => (
-                        <div 
+                        <div
                             key={index}
                             style={styles.navItem}
                             onClick={() => item.path !== '#' ? navigate(item.path) : null}
@@ -117,19 +116,18 @@ const Dashboard = () => {
                                 <span style={styles.navName}>{item.name}</span>
                                 <span style={styles.navDesc}>{item.description}</span>
                             </div>
+                            {item.locked && <span style={styles.lockBadge}>Premium</span>}
                         </div>
                     ))}
                 </nav>
 
                 <button onClick={handleLogout} style={styles.logoutBtn}>
-                    <span>🚪</span>
+                    <span>Exit</span>
                     <span>Logout</span>
                 </button>
             </div>
 
-            {/* Main Content */}
             <div style={styles.mainContent}>
-                {/* Welcome Header */}
                 <div style={styles.welcomeHeader}>
                     <div>
                         <h1 style={styles.welcomeTitle}>
@@ -142,39 +140,37 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
                 <div style={styles.statsGrid}>
                     <div style={styles.statCard}>
-                        <div style={{ ...styles.statIcon, background: '#e3f2fd', color: '#1976d2' }}>🏸</div>
+                        <div style={{ ...styles.statIcon, background: '#e3f2fd', color: '#1976d2' }}>P</div>
                         <div>
                             <h3 style={styles.statNumber}>{stats.products}</h3>
                             <p style={styles.statLabel}>Products Available</p>
                         </div>
                     </div>
                     <div style={styles.statCard}>
-                        <div style={{ ...styles.statIcon, background: '#e8f5e9', color: '#388e3c' }}>📦</div>
+                        <div style={{ ...styles.statIcon, background: '#e8f5e9', color: '#388e3c' }}>O</div>
                         <div>
                             <h3 style={styles.statNumber}>{stats.orders}</h3>
-                            <p style={styles.statLabel}>Orders Completed</p>
+                            <p style={styles.statLabel}>{featureFlags.orders ? 'Orders Completed' : 'Premium Orders Locked'}</p>
                         </div>
                     </div>
                     <div style={styles.statCard}>
-                        <div style={{ ...styles.statIcon, background: '#fff3e0', color: '#f57c00' }}>💬</div>
+                        <div style={{ ...styles.statIcon, background: '#fff3e0', color: '#f57c00' }}>F</div>
                         <div>
                             <h3 style={styles.statNumber}>{stats.forumTopics}</h3>
-                            <p style={styles.statLabel}>Forum Discussions</p>
+                            <p style={styles.statLabel}>{featureFlags.forum ? 'Forum Discussions' : 'Forum Locked'}</p>
                         </div>
                     </div>
                     <div style={styles.statCard}>
-                        <div style={{ ...styles.statIcon, background: '#fce4ec', color: '#c2185b' }}>📝</div>
+                        <div style={{ ...styles.statIcon, background: '#fce4ec', color: '#c2185b' }}>B</div>
                         <div>
                             <h3 style={styles.statNumber}>{stats.blogPosts}</h3>
-                            <p style={styles.statLabel}>Blog Articles</p>
+                            <p style={styles.statLabel}>{featureFlags.blog ? 'Blog Articles' : 'Blog Locked'}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Quick Actions */}
                 <div style={styles.sectionTitle}>
                     <h2>Quick Actions</h2>
                     <p>Explore what SportyHub has to offer</p>
@@ -182,28 +178,27 @@ const Dashboard = () => {
 
                 <div style={styles.quickActionsGrid}>
                     <div style={styles.actionCard} onClick={() => navigate('/products')}>
-                        <span style={styles.actionIcon}>🛍️</span>
+                        <span style={styles.actionIcon}>Shop</span>
                         <h3>Shop Now</h3>
-                        <p>Browse our collection of premium sports equipment</p>
+                        <p>Browse our collection of sports equipment</p>
                     </div>
                     <div style={styles.actionCard} onClick={() => navigate('/expert')}>
-                        <span style={styles.actionIcon}>🎯</span>
-                        <h3>Expert Advice</h3>
-                        <p>Get tips from professional athletes</p>
+                        <span style={styles.actionIcon}>Pro</span>
+                        <h3>{featureFlags.expertAdvice ? 'Expert Advice' : 'Unlock Expert Advice'}</h3>
+                        <p>{featureFlags.expertAdvice ? 'Get tips from professional athletes' : 'Premium upgrade required for athlete guidance'}</p>
                     </div>
                     <div style={styles.actionCard} onClick={() => navigate('/forum')}>
-                        <span style={styles.actionIcon}>💬</span>
-                        <h3>Join Forum</h3>
-                        <p>Connect with fellow sports enthusiasts</p>
+                        <span style={styles.actionIcon}>Talk</span>
+                        <h3>{featureFlags.forum ? 'Join Forum' : 'Unlock Community Forum'}</h3>
+                        <p>{featureFlags.forum ? 'Connect with fellow sports enthusiasts' : 'Premium upgrade required for discussions'}</p>
                     </div>
                     <div style={styles.actionCard} onClick={() => navigate('/blog')}>
-                        <span style={styles.actionIcon}>📖</span>
-                        <h3>Read Blog</h3>
-                        <p>Latest sports news and articles</p>
+                        <span style={styles.actionIcon}>Read</span>
+                        <h3>{featureFlags.blog ? 'Read Blog' : 'Unlock Premium Blog'}</h3>
+                        <p>{featureFlags.blog ? 'Latest sports news and articles' : 'Premium upgrade required for full articles'}</p>
                     </div>
                 </div>
 
-                {/* Recent Activity */}
                 <div style={styles.sectionTitle}>
                     <h2>Recent Activity</h2>
                     <p>Your latest interactions</p>
@@ -211,23 +206,27 @@ const Dashboard = () => {
 
                 <div style={styles.activityCard}>
                     <div style={styles.activityItem}>
-                        <span style={styles.activityIcon}>✅</span>
+                        <span style={styles.activityIcon}>OK</span>
                         <div>
                             <p style={styles.activityText}>Welcome to SportyHub! Start exploring our products.</p>
                             <p style={styles.activityTime}>Just now</p>
                         </div>
                     </div>
                     <div style={styles.activityItem}>
-                        <span style={styles.activityIcon}>🏸</span>
+                        <span style={styles.activityIcon}>New</span>
                         <div>
                             <p style={styles.activityText}>Discover our wide range of sports equipment</p>
                             <p style={styles.activityTime}>Today</p>
                         </div>
                     </div>
                     <div style={styles.activityItem}>
-                        <span style={styles.activityIcon}>💡</span>
+                        <span style={styles.activityIcon}>Pro</span>
                         <div>
-                            <p style={styles.activityText}>Check out expert tips from professional athletes</p>
+                            <p style={styles.activityText}>
+                                {featureFlags.expertAdvice
+                                    ? 'Check out expert tips from professional athletes'
+                                    : 'Premium features are currently locked for standard users'}
+                            </p>
                             <p style={styles.activityTime}>Today</p>
                         </div>
                     </div>
@@ -261,7 +260,16 @@ const styles = {
         borderBottom: '1px solid rgba(255,255,255,0.1)',
     },
     logoIcon: {
-        fontSize: '32px',
+        width: '42px',
+        height: '42px',
+        borderRadius: '12px',
+        background: '#ff9800',
+        color: '#1a1a2e',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '14px',
+        fontWeight: 'bold',
     },
     logoText: {
         fontSize: '24px',
@@ -318,7 +326,15 @@ const styles = {
         transition: 'background 0.3s',
     },
     navIcon: {
-        fontSize: '24px',
+        minWidth: '44px',
+        height: '44px',
+        borderRadius: '12px',
+        background: 'rgba(255,255,255,0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: 'bold',
     },
     navContent: {
         flex: 1,
@@ -332,6 +348,15 @@ const styles = {
     navDesc: {
         fontSize: '11px',
         opacity: 0.6,
+    },
+    lockBadge: {
+        fontSize: '10px',
+        fontWeight: 'bold',
+        background: '#ff9800',
+        color: '#1a1a2e',
+        padding: '4px 8px',
+        borderRadius: '999px',
+        whiteSpace: 'nowrap',
     },
     logoutBtn: {
         margin: '20px',
@@ -395,7 +420,8 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '24px',
+        fontSize: '20px',
+        fontWeight: 'bold',
     },
     statNumber: {
         margin: 0,
@@ -427,9 +453,16 @@ const styles = {
         boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
     },
     actionIcon: {
-        fontSize: '40px',
-        display: 'block',
-        marginBottom: '15px',
+        width: '58px',
+        height: '58px',
+        margin: '0 auto 15px',
+        borderRadius: '16px',
+        background: '#f3f4f6',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '13px',
+        fontWeight: 'bold',
     },
     activityCard: {
         background: 'white',
@@ -444,7 +477,16 @@ const styles = {
         borderBottom: '1px solid #eee',
     },
     activityIcon: {
-        fontSize: '24px',
+        minWidth: '48px',
+        height: '48px',
+        borderRadius: '14px',
+        background: '#eef2ff',
+        color: '#1d4ed8',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: 'bold',
     },
     activityText: {
         margin: 0,
@@ -474,16 +516,11 @@ const styles = {
     },
 };
 
-// Add keyframes for spinner
 const styleElement = document.createElement('style');
 styleElement.textContent = `
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
-    }
-    .action-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     }
 `;
 document.head.appendChild(styleElement);

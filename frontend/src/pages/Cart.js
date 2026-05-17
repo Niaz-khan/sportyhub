@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
+import { featureFlags } from '../config/features';
 
 function Cart() {
     const navigate = useNavigate();
@@ -16,15 +17,15 @@ function Cart() {
         return (
             <div style={styles.container}>
                 <div style={styles.header}>
-                    <h1>🏃‍♂️ Sporty Hub - Cart</h1>
+                    <h1>Sporty Hub - Cart</h1>
                     <div>
                         <button onClick={() => navigate('/products')} style={styles.button}>Products</button>
                         <button onClick={() => navigate('/dashboard')} style={styles.button}>Dashboard</button>
-                        <button onClick={handleLogout} style={{...styles.button, background: '#ff4757'}}>Logout</button>
+                        <button onClick={handleLogout} style={{ ...styles.button, background: '#ff4757' }}>Logout</button>
                     </div>
                 </div>
                 <div style={styles.emptyCart}>
-                    <h2>Your cart is empty 🛒</h2>
+                    <h2>Your cart is empty</h2>
                     <button onClick={() => navigate('/products')} style={styles.shopBtn}>Continue Shopping</button>
                 </div>
             </div>
@@ -34,11 +35,11 @@ function Cart() {
     return (
         <div style={styles.container}>
             <div style={styles.header}>
-                <h1>🏃‍♂️ Sporty Hub - Cart</h1>
+                <h1>Sporty Hub - Cart</h1>
                 <div>
                     <button onClick={() => navigate('/products')} style={styles.button}>Products</button>
                     <button onClick={() => navigate('/dashboard')} style={styles.button}>Dashboard</button>
-                    <button onClick={handleLogout} style={{...styles.button, background: '#ff4757'}}>Logout</button>
+                    <button onClick={handleLogout} style={{ ...styles.button, background: '#ff4757' }}>Logout</button>
                 </div>
             </div>
 
@@ -58,13 +59,13 @@ function Cart() {
                             {cartItems.map(item => (
                                 <tr key={item._id}>
                                     <td>{item.name}</td>
-                                    <td>₨{item.price.toLocaleString()}</td>
+                                    <td>Rs {item.price.toLocaleString()}</td>
                                     <td>
                                         <button onClick={() => updateQuantity(item._id, item.quantity - 1)} style={styles.qtyBtn}>-</button>
                                         <span style={styles.qty}>{item.quantity}</span>
                                         <button onClick={() => updateQuantity(item._id, item.quantity + 1)} style={styles.qtyBtn}>+</button>
                                     </td>
-                                    <td>₨{(item.price * item.quantity).toLocaleString()}</td>
+                                    <td>Rs {(item.price * item.quantity).toLocaleString()}</td>
                                     <td><button onClick={() => removeFromCart(item._id)} style={styles.removeBtn}>Remove</button></td>
                                 </tr>
                             ))}
@@ -75,9 +76,14 @@ function Cart() {
                 <div style={styles.summary}>
                     <h3>Order Summary</h3>
                     <p>Total Items: {cartItems.reduce((t, i) => t + i.quantity, 0)}</p>
-                    <p style={styles.totalPrice}>Total: ₹{getTotalPrice().toLocaleString()}</p>
+                    <p style={styles.totalPrice}>Total: Rs {getTotalPrice().toLocaleString()}</p>
                     <button onClick={clearCart} style={styles.clearBtn}>Clear Cart</button>
-                    <button onClick={() => navigate('/checkout')} style={styles.checkoutBtn}>Proceed to Checkout</button>
+                    <button onClick={() => navigate('/checkout')} style={featureFlags.checkout ? styles.checkoutBtn : styles.lockedCheckoutBtn}>
+                        {featureFlags.checkout ? 'Proceed to Checkout' : 'Checkout Is Premium'}
+                    </button>
+                    {!featureFlags.checkout && (
+                        <p style={styles.premiumNote}>Upgrade to premium to complete purchases inside the app.</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -99,7 +105,9 @@ const styles = {
     removeBtn: { padding: '5px 10px', background: '#ff4757', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' },
     totalPrice: { fontSize: '24px', fontWeight: 'bold', color: '#28a745' },
     clearBtn: { width: '100%', padding: '10px', marginTop: '10px', background: '#ff4757', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
-    checkoutBtn: { width: '100%', padding: '10px', marginTop: '10px', background: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }
+    checkoutBtn: { width: '100%', padding: '10px', marginTop: '10px', background: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
+    lockedCheckoutBtn: { width: '100%', padding: '10px', marginTop: '10px', background: '#111827', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
+    premiumNote: { marginTop: '10px', fontSize: '12px', color: '#666', lineHeight: '1.5' }
 };
 
 export default Cart;
