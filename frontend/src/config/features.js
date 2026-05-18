@@ -1,10 +1,10 @@
 export const featureFlags = {
-    expertAdvice: false,
-    forum: false,
-    blog: false,
-    orders: false,
-    checkout: false,
-    chatbot: false,
+    expertAdvice: true,
+    forum: true,
+    blog: true,
+    orders: true,
+    checkout: true,
+    chatbot: true,
 };
 
 export const premiumFeatureContent = {
